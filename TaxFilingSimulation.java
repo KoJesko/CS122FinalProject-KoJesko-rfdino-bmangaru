@@ -69,23 +69,13 @@ class Taxpayer extends Person implements Taxable {
         double tax = 0.0;
 
         if (taxableIncome <= 12800) {
-            tax = taxableIncome * 0.04; // 4% tax rate for income up to $12,800
+            tax = taxableIncome * 0.04; 
         } else if (taxableIncome <= 17650) {
-            tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; // 4% on first $12,800, 4.5% on the rest up to $17,650
+            tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; 
         } else if (taxableIncome <= 20900) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; // 4% on first $12,800,
-                                                                                             // 4.5% on next $4,850,
-                                                                                             // 5.25% on the rest up to
-                                                                                             // $20,900
+            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; 
         } else if (taxableIncome <= 107650) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (taxableIncome - 20900) * 0.055; // Continue
-                                                                                                                       // with
-                                                                                                                       // additional
-                                                                                                                       // tax
-                                                                                                                       // brackets
-                                                                                                                       // for
-                                                                                                                       // single
-                                                                                                                       // filers
+            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (taxableIncome - 20900) * 0.055; 
         } else if (taxableIncome <= 269300) {
             tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
                     + (taxableIncome - 107650) * 0.06;
@@ -113,23 +103,13 @@ class Taxpayer extends Person implements Taxable {
         double tax = 0.0;
 
         if (taxableIncome <= 17150) {
-            tax = taxableIncome * 0.04; // 4% tax rate for income up to $17,150
+            tax = taxableIncome * 0.04; 
         } else if (taxableIncome <= 23600) {
-            tax = 17150 * 0.04 + (taxableIncome - 17150) * 0.045; // 4% on first $17,150, 4.5% on the rest up to $23,600
+            tax = 17150 * 0.04 + (taxableIncome - 17150) * 0.045; 
         } else if (taxableIncome <= 27900) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (taxableIncome - 23600) * 0.0525; // 4% on first $17,150,
-                                                                                             // 4.5% on next $4,450,
-                                                                                             // 5.25% on the rest up to
-                                                                                             // $27,900
+            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (taxableIncome - 23600) * 0.0525; 
         } else if (taxableIncome <= 161550) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (taxableIncome - 27900) * 0.055; // Continue
-                                                                                                                       // with
-                                                                                                                       // additional
-                                                                                                                       // tax
-                                                                                                                       // brackets
-                                                                                                                       // for
-                                                                                                                       // joint
-                                                                                                                       // filers
+            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (taxableIncome - 27900) * 0.055; 
         } else if (taxableIncome <= 323200) {
             tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (161550 - 27900) * 0.055
                     + (taxableIncome - 161550) * 0.06;
@@ -157,9 +137,9 @@ class Taxpayer extends Person implements Taxable {
         double tax = 0.0;
 
         if (taxableIncome <= 12800) {
-            tax = taxableIncome * 0.04; // 4% tax rate for income up to $12,800
+            tax = taxableIncome * 0.04; 
         } else if (taxableIncome <= 17650) {
-            tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; // 4% on first $12,800, 4.5% on the rest up to $17,650
+            tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; 
         } else if (taxableIncome <= 20900) {
             tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; 
         } else if (taxableIncome <= 107650) {
