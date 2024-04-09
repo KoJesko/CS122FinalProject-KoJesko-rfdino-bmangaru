@@ -161,21 +161,9 @@ class Taxpayer extends Person implements Taxable {
         } else if (taxableIncome <= 17650) {
             tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; // 4% on first $12,800, 4.5% on the rest up to $17,650
         } else if (taxableIncome <= 20900) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; // 4% on first $12,800,
-                                                                                             // 4.5% on next $4,850,
-                                                                                             // 5.25% on the rest up to
-                                                                                             // $20,900
+            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; 
         } else if (taxableIncome <= 107650) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (taxableIncome - 20900) * 0.055; // Continue
-                                                                                                                       // with
-                                                                                                                       // additional
-                                                                                                                       // tax
-                                                                                                                       // brackets
-                                                                                                                       // for
-                                                                                                                       // head
-                                                                                                                       // of
-                                                                                                                       // household
-                                                                                                                       // filers
+            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (taxableIncome - 20900) * 0.055; 
         } else if (taxableIncome <= 269300) {
             tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
                     + (taxableIncome - 107650) * 0.06;
