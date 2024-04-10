@@ -1,17 +1,22 @@
-import java.util.ArrayList;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 // Interface for tax calculation behavior
 interface Taxable {
-    double calculateTax();
+    BigDecimal calculateTax();
+
+    BigDecimal calculateTaxRecursive(BigDecimal income);
 }
 
 // Abstract base class for a person
 abstract class Person {
     protected String name;
-    protected double income;
+    protected BigDecimal income;
 
-    public Person(String name, double income) {
+    public Person(String name, BigDecimal income) {
         this.name = name;
         this.income = income;
     }
@@ -20,154 +25,137 @@ abstract class Person {
         return name;
     }
 
-    public double getIncome() {
+    public BigDecimal getIncome() {
         return income;
     }
 
     // Abstract method to be implemented by subclasses
-    public abstract double calculateTax();
+    public abstract BigDecimal calculateTax();
+
+    public abstract BigDecimal calculateTaxRecursive(BigDecimal income);
 }
 
 // Class representing a taxpayer, extending Person and implementing Taxable
 class Taxpayer extends Person implements Taxable {
-    private double deductions;
+    private BigDecimal deductions;
     private String filingStatus;
 
-    public Taxpayer(String name, double income, double deductions, String filingStatus) {
+    // Tax brackets for different filing statuses using a 2D array
+    private static final Map<String, BigDecimal[]> TAX_BRACKETS = new HashMap<>();
+
+    static {
+        // Single filer tax brackets and rates
+        TAX_BRACKETS.put("single", new BigDecimal[] {
+                BigDecimal.ZERO, new BigDecimal("8500"), new BigDecimal("11700"),
+                new BigDecimal("13900"), new BigDecimal("80650"), new BigDecimal("215400"),
+                new BigDecimal("1077550"), new BigDecimal("5000000"),
+                new BigDecimal("25000000"),
+                new BigDecimal(
+                        "99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"),
+        });
+
+        // Joint filer tax brackets and rates
+        TAX_BRACKETS.put("joint", new BigDecimal[] {
+                BigDecimal.ZERO, new BigDecimal("17150"), new BigDecimal("23600"),
+                new BigDecimal("27900"), new BigDecimal("161550"), new BigDecimal("323200"),
+                new BigDecimal("2155350"), new BigDecimal("5000000"),
+                new BigDecimal("25000000"),
+                new BigDecimal(
+                        "99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"),
+        });
+
+        // Head of household filer tax brackets and rates
+        TAX_BRACKETS.put("head of household", new BigDecimal[] {
+                BigDecimal.ZERO, new BigDecimal("12800"), new BigDecimal("17650"),
+                new BigDecimal("20900"), new BigDecimal("107650"), new BigDecimal("269300"),
+                new BigDecimal("1616450"), new BigDecimal("5000000"),
+                new BigDecimal("25000000"),
+                new BigDecimal(
+                        "99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"),
+        });
+    }
+
+    public Taxpayer(String name, BigDecimal income, BigDecimal deductions, String filingStatus) {
         super(name, income);
         this.deductions = deductions;
-        this.filingStatus = filingStatus;
+        this.filingStatus = filingStatus.toLowerCase();
     }
 
-    // Calculate tax based on tax brackets (single, joint, or head of household)
+    // Calculate tax based on tax brackets and filing status
     @Override
-    public double calculateTax() {
-        double taxableIncome = getIncome() - deductions;
-        double tax = 0.0;
+    public BigDecimal calculateTax() {
+        BigDecimal[] brackets = TAX_BRACKETS.get(filingStatus);
+        BigDecimal taxableIncome = income.subtract(deductions);
+        BigDecimal tax = BigDecimal.ZERO;
 
-        switch (filingStatus.toLowerCase()) {
+        // Calculate tax using tax brackets and rates
+        for (int i = 0; i < brackets.length - 1; i++) {
+            if (taxableIncome.compareTo(brackets[i + 1]) <= 0) {
+                tax = tax.add(taxableIncome.subtract(brackets[i]).multiply(getTaxRate(i)));
+                break;
+            } else {
+                tax = tax.add(brackets[i + 1].subtract(brackets[i]).multiply(getTaxRate(i)));
+            }
+        }
+
+        return tax;
+    }
+
+    // Recursive version of tax calculation
+    @Override
+    public BigDecimal calculateTaxRecursive(BigDecimal income) {
+        BigDecimal[] brackets = TAX_BRACKETS.get(filingStatus);
+        BigDecimal[] rates = TAX_BRACKETS.get(filingStatus + "_rates");
+        BigDecimal tax = BigDecimal.ZERO;
+
+        for (int i = 0; i < brackets.length - 1; i++) {
+            if (income.compareTo(brackets[i + 1]) <= 0) {
+                BigDecimal bracketTax = income.subtract(brackets[i]).multiply(rates[i]);
+                BigDecimal recursiveTax = calculateTaxRecursive(brackets[i]);
+                return bracketTax.add(recursiveTax);
+            }
+        }
+
+        return tax; // Default return if no bracket matches (should not reach here)
+    }
+
+    private BigDecimal getTaxRate(int index) {
+        BigDecimal[] rates = getTaxRates(filingStatus);
+        return rates[index];
+    }
+
+    // Helper method to get tax rate based on bracket index
+    private BigDecimal[] getTaxRates(String filingStatus) {
+        switch (filingStatus) {
             case "single":
-                tax = calculateSingleTax(taxableIncome);
-                break;
+                return new BigDecimal[] {
+                        new BigDecimal("0.04"), new BigDecimal("0.045"), new BigDecimal("0.0525"),
+                        new BigDecimal("0.055"), new BigDecimal("0.06"), new BigDecimal("0.0685"),
+                        new BigDecimal("0.0965"), new BigDecimal("0.103"), new BigDecimal("0.109"),
+                        new BigDecimal("0.109")
+                };
             case "joint":
-                tax = calculateJointTax(taxableIncome);
-                break;
+                return new BigDecimal[] {
+                        new BigDecimal("0.04"), new BigDecimal("0.045"), new BigDecimal("0.0525"),
+                        new BigDecimal("0.055"), new BigDecimal("0.06"), new BigDecimal("0.0685"),
+                        new BigDecimal("0.0965"), new BigDecimal("0.103"), new BigDecimal("0.109"),
+                        new BigDecimal("0.109")
+                };
             case "head of household":
-                tax = calculateHeadOfHouseholdTax(taxableIncome);
-                break;
+                return new BigDecimal[] {
+                        new BigDecimal("0.04"), new BigDecimal("0.045"), new BigDecimal("0.0525"),
+                        new BigDecimal("0.055"), new BigDecimal("0.06"), new BigDecimal("0.0685"),
+                        new BigDecimal("0.0965"), new BigDecimal("0.103"), new BigDecimal("0.109"),
+                        new BigDecimal("0.109")
+                };
             default:
-                System.out.println("Invalid filing status. Using single filer tax brackets.");
-                tax = calculateSingleTax(taxableIncome);
-                break;
+                return new BigDecimal[0]; // Default to empty array if status is not recognized
         }
-
-        return tax;
-    }
-
-    // Calculate tax for single filers
-    private double calculateSingleTax(double taxableIncome) {
-        double tax = 0.0;
-
-        if (taxableIncome <= 12800) {
-            tax = taxableIncome * 0.04; 
-        } else if (taxableIncome <= 17650) {
-            tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; 
-        } else if (taxableIncome <= 20900) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; 
-        } else if (taxableIncome <= 107650) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (taxableIncome - 20900) * 0.055; 
-        } else if (taxableIncome <= 269300) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (taxableIncome - 107650) * 0.06;
-        } else if (taxableIncome <= 1616450) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (taxableIncome - 269300) * 0.0685;
-        } else if (taxableIncome <= 5000000) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (1616450 - 269300) * 0.0685 + (taxableIncome - 1616450) * 0.0965;
-        } else if (taxableIncome <= 25000000) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (1616450 - 269300) * 0.0685 + (5000000 - 1616450) * 0.103
-                    + (taxableIncome - 5000000) * 0.103;
-        } else {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (1616450 - 269300) * 0.0685 + (5000000 - 1616450) * 0.103
-                    + (25000000 - 5000000) * 0.109 + (taxableIncome - 25000000) * 0.109;
-        }
-
-        return tax;
-    }
-
-    // Calculate tax for joint filers
-    private double calculateJointTax(double taxableIncome) {
-        double tax = 0.0;
-
-        if (taxableIncome <= 17150) {
-            tax = taxableIncome * 0.04; 
-        } else if (taxableIncome <= 23600) {
-            tax = 17150 * 0.04 + (taxableIncome - 17150) * 0.045; 
-        } else if (taxableIncome <= 27900) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (taxableIncome - 23600) * 0.0525; 
-        } else if (taxableIncome <= 161550) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (taxableIncome - 27900) * 0.055; 
-        } else if (taxableIncome <= 323200) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (161550 - 27900) * 0.055
-                    + (taxableIncome - 161550) * 0.06;
-        } else if (taxableIncome <= 2155350) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (161550 - 27900) * 0.055
-                    + (323200 - 161550) * 0.06 + (taxableIncome - 323200) * 0.0685;
-        } else if (taxableIncome <= 5000000) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (161550 - 27900) * 0.055
-                    + (323200 - 161550) * 0.06 + (2155350 - 323200) * 0.0685 + (taxableIncome - 2155350) * 0.0965;
-        } else if (taxableIncome <= 25000000) {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (161550 - 27900) * 0.055
-                    + (323200 - 161550) * 0.06 + (2155350 - 323200) * 0.0685 + (5000000 - 2155350) * 0.103
-                    + (taxableIncome - 5000000) * 0.103;
-        } else {
-            tax = 17150 * 0.04 + (23600 - 17150) * 0.045 + (27900 - 23600) * 0.0525 + (161550 - 27900) * 0.055
-                    + (323200 - 161550) * 0.06 + (2155350 - 323200) * 0.0685 + (5000000 - 2155350) * 0.103
-                    + (25000000 - 5000000) * 0.109 + (taxableIncome - 25000000) * 0.109;
-        }
-
-        return tax;
-    }
-
-    // Calculate tax for head of household filers
-    private double calculateHeadOfHouseholdTax(double taxableIncome) {
-        double tax = 0.0;
-
-        if (taxableIncome <= 12800) {
-            tax = taxableIncome * 0.04; 
-        } else if (taxableIncome <= 17650) {
-            tax = 12800 * 0.04 + (taxableIncome - 12800) * 0.045; 
-        } else if (taxableIncome <= 20900) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (taxableIncome - 17650) * 0.0525; 
-        } else if (taxableIncome <= 107650) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (taxableIncome - 20900) * 0.055; 
-        } else if (taxableIncome <= 269300) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (taxableIncome - 107650) * 0.06;
-        } else if (taxableIncome <= 1616450) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (taxableIncome - 269300) * 0.0685;
-        } else if (taxableIncome <= 5000000) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (1616450 - 269300) * 0.0685 + (taxableIncome - 1616450) * 0.0965;
-        } else if (taxableIncome <= 25000000) {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (1616450 - 269300) * 0.0685 + (5000000 - 1616450) * 0.103
-                    + (taxableIncome - 5000000) * 0.103;
-        } else {
-            tax = 12800 * 0.04 + (17650 - 12800) * 0.045 + (20900 - 17650) * 0.0525 + (107650 - 20900) * 0.055
-                    + (269300 - 107650) * 0.06 + (1616450 - 269300) * 0.0685 + (5000000 - 1616450) * 0.103
-                    + (25000000 - 5000000) * 0.109 + (taxableIncome - 25000000) * 0.109;
-        }
-
-        return tax;
     }
 }
 
 public class TaxFilingSimulation {
+    int i = 0;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -176,21 +164,39 @@ public class TaxFilingSimulation {
         // Prompt user to enter taxpayer details
         String choice;
         do {
-            System.out.print("Enter taxpayer name: ");
-            String name = scanner.nextLine();
+            try {
+                System.out.print("Enter taxpayer name: ");
+                String name = scanner.nextLine();
 
-            System.out.print("Enter total income for the year: ");
-            double income = Double.parseDouble(scanner.nextLine());
+                System.out.print("Enter total income for the year: ");
+                BigDecimal income = new BigDecimal(scanner.nextLine());
 
-            System.out.print("Enter total deductions: ");
-            double deductions = Double.parseDouble(scanner.nextLine());
+                System.out.print("Enter total deductions: ");
+                BigDecimal deductions = new BigDecimal(scanner.nextLine());
 
-            System.out.print("Enter filing status (single/joint/head of household): ");
-            String filingStatus = scanner.nextLine();
-
-            // Create a new taxpayer object
-            Taxable taxpayer = new Taxpayer(name, income, deductions, filingStatus);
-            taxpayers.add(taxpayer);
+                System.out.print("Enter filing status (single/joint/head of household): ");
+                int j = 0;
+                String filingStatus = "";
+                while (j == 0) {
+                    {
+                        filingStatus = scanner.nextLine();
+                        if (!filingStatus.equalsIgnoreCase("single") && !filingStatus.equalsIgnoreCase("joint")
+                                && !filingStatus.equalsIgnoreCase("head of household")) {
+                            System.out.println(
+                                    "Invalid input. Please enter a valid filing status. (single/joint/head of household)");
+                        } else {
+                            j++;
+                        }
+                    }
+                }
+                // Create a new taxpayer object
+                Taxable taxpayer = new Taxpayer(name, income, deductions, filingStatus);
+                taxpayers.add(taxpayer);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid number.");
+            } catch (Exception e) {
+                System.out.println("An error occurred. Please try again.");
+            }
 
             System.out.print("Do you want to enter another taxpayer? (yes/no): ");
             choice = scanner.nextLine();
@@ -199,11 +205,13 @@ public class TaxFilingSimulation {
         // Calculate and display tax for each taxpayer
         System.out.println("\nTax Filing Result:");
         for (Taxable taxpayer : taxpayers) {
-            double tax = taxpayer.calculateTax();
-            if (taxpayer instanceof Person) {
+            try {
+                BigDecimal tax = taxpayer.calculateTax();
                 System.out.println("Taxpayer: " + ((Person) taxpayer).getName());
+                System.out.println("Tax Owed: $" + tax);
+            } catch (Exception e) {
+                System.out.println("Error calculating tax for " + ((Person) taxpayer).getName() + ".");
             }
-            System.out.println("Tax Owed: $" + tax);
         }
 
         scanner.close();
