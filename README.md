@@ -1,1 +1,1 @@
-# CS122FinalProject-KoJesko-Pace
+# CS122FinalProject-KoJesko
